@@ -2,19 +2,23 @@
 const express = require('express');
 const mysql2 = require('mysql2');
 const cors = require('cors');
+require('dotenv').config(); // <--- ADDED: Loads environment variables from .env file for local development
 
 const app = express();
-const port = 3001; // Ensure this port is different from your React app's port (usually 3000)
+// CORRECTED: Use process.env.PORT for Railway, fallback to 3001 for local development
+const port = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json()); // Middleware to parse JSON request bodies
 
-// Database connection
+// Database connection - Use Railway's auto-injected environment variables
+// CORRECTED: Uses process.env variables for Railway deployment, with 'localhost' fallbacks for local dev
 const db = mysql2.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '', // Your MySQL password if you have one
-    database: 'firstapp'
+    host: process.env.MYSQL_HOST || 'localhost',
+    user: process.env.MYSQL_USER || 'root',
+    password: process.env.MYSQL_PASSWORD || '', // Your MySQL password if you have one locally
+    database: process.env.MYSQL_DATABASE || 'firstapp',
+    port: process.env.MYSQL_PORT || 3306 // MySQL default port
 });
 
 // Use promise-based connection for async/await in routes
@@ -48,8 +52,6 @@ app.post('/signup', async (req, res) => {
         }
 
         // Insert new user if email is not taken
-        // IMPORTANT: The number of '?' placeholders must match the number of values.
-        // You had 5 '?' but only 3 values + NOW(). Removed an extra '?'
         const insertSql = 'INSERT INTO users (name, email, password, created_at) VALUES (?, ?, ?, NOW())';
         const values = [name, email, password];
 
